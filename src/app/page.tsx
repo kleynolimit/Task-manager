@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import TaskCard from '@/components/TaskCard';
 import NewTaskForm from '@/components/NewTaskForm';
@@ -15,23 +15,29 @@ export default function Home() {
   const [filterProject, setFilterProject] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    const [tasksRes, projectsRes] = await Promise.all([
-      fetch('/api/tasks?status=todo'),
-      fetch('/api/projects'),
-    ]);
-    const [tasksData, projectsData] = await Promise.all([
-      tasksRes.json(),
-      projectsRes.json(),
-    ]);
-    setTasks(tasksData);
-    setProjects(projectsData);
-    setLoading(false);
-  }, []);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+
+    (async () => {
+      const [tasksRes, projectsRes] = await Promise.all([
+        fetch('/api/tasks?status=todo'),
+        fetch('/api/projects'),
+      ]);
+      const [tasksData, projectsData] = await Promise.all([
+        tasksRes.json(),
+        projectsRes.json(),
+      ]);
+      if (!cancelled) {
+        setTasks(tasksData);
+        setProjects(projectsData);
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleComplete = async (id: string) => {
     await fetch(`/api/tasks/${id}`, {

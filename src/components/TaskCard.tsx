@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
-import { Task, Project, User, USERS } from '@/lib/types';
+import { Task, Project, USERS } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 
 interface TaskCardProps {
