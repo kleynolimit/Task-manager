@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import Providers from "@/components/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Task Manager 🦞",
-  description: "Clear-style task manager for Pavlo's team",
+  title: "Clear Tasks",
+  description: "Clear-style task manager",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -18,8 +19,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#030712" },
+    { media: "(prefers-color-scheme: light)", color: "#3b82f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#1e40af" },
   ],
 };
 
@@ -30,8 +31,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uk" suppressHydrationWarning>
-      <body className="antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
-        {children}
+      <body className="antialiased">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

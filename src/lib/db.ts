@@ -1,5 +1,5 @@
 import { createClient } from '@libsql/client';
-import { DEFAULT_PROJECTS, type Project, type Task } from './types';
+import { type Project, type Task } from './types';
 import { randomUUID } from 'crypto';
 
 const url = process.env.TURSO_DATABASE_URL;
@@ -17,15 +17,18 @@ const client = createClient({
 let initPromise: Promise<void> | null = null;
 
 async function init() {
+  // Projects table with userId
   await client.execute(`
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       emoji TEXT NOT NULL,
-      gradient TEXT NOT NULL
+      gradient TEXT NOT NULL,
+      userId TEXT
     )
   `);
 
+  // Tasks table with userId
   await client.execute(`
     CREATE TABLE IF NOT EXISTS tasks (
       id TEXT PRIMARY KEY,
@@ -37,31 +40,24 @@ async function init() {
       status TEXT DEFAULT 'todo',
       createdAt TEXT NOT NULL,
       closedAt TEXT,
+      userId TEXT,
       FOREIGN KEY (projectId) REFERENCES projects(id)
     )
   `);
 
-  // Clean up duplicate projects (keep only one per name)
-  await client.execute(`
-    DELETE FROM projects WHERE id NOT IN (
-      SELECT MIN(id) FROM projects GROUP BY name
-    )
-  `);
-
-  // Seed projects only if they don't exist (by name)
-  for (const p of DEFAULT_PROJECTS) {
-    const { rows } = await client.execute({
-      sql: 'SELECT id FROM projects WHERE name = ? LIMIT 1',
-      args: [p.name],
-    });
-    if (rows.length === 0) {
-      await client.execute({
-        sql: 'INSERT INTO projects (id, name, emoji, gradient) VALUES (?, ?, ?, ?)',
-        args: [randomUUID(), p.name, p.emoji, p.gradient],
-      });
-      console.log(`[db] Seeded project: ${p.name}`);
-    }
+  // Add userId column if it doesn't exist (migration)
+  try {
+    await client.execute('ALTER TABLE projects ADD COLUMN userId TEXT');
+  } catch (e) {
+    // Column already exists
   }
+  
+  try {
+    await client.execute('ALTER TABLE tasks ADD COLUMN userId TEXT');
+  } catch (e) {
+    // Column already exists
+  }
+
   console.log('[db] Initialized successfully');
 }
 
@@ -73,33 +69,76 @@ async function ensureInit() {
 }
 
 // Project queries
-export async function getProjects(): Promise<Project[]> {
+export async function getProjects(userId?: string): Promise<Project[]> {
   await ensureInit();
-  const { rows } = await client.execute('SELECT * FROM projects');
+  if (userId) {
+    const { rows } = await client.execute({
+      sql: 'SELECT * FROM projects WHERE userId = ? ORDER BY name',
+      args: [userId],
+    });
+    return rows as unknown as Project[];
+  }
+  const { rows } = await client.execute('SELECT * FROM projects ORDER BY name');
   return rows as unknown as Project[];
 }
 
-export async function createProject(project: Omit<Project, 'id'>): Promise<Project> {
+export async function getProject(id: string): Promise<Project | undefined> {
+  await ensureInit();
+  const { rows } = await client.execute({
+    sql: 'SELECT * FROM projects WHERE id = ? LIMIT 1',
+    args: [id],
+  });
+  return (rows[0] as unknown as Project) || undefined;
+}
+
+export async function createProject(project: Omit<Project, 'id'>, userId?: string): Promise<Project> {
   await ensureInit();
   const id = randomUUID();
   await client.execute({
-    sql: 'INSERT INTO projects (id, name, emoji, gradient) VALUES (?, ?, ?, ?)',
-    args: [id, project.name, project.emoji, project.gradient],
+    sql: 'INSERT INTO projects (id, name, emoji, gradient, userId) VALUES (?, ?, ?, ?, ?)',
+    args: [id, project.name, project.emoji, project.gradient, userId || null],
   });
   return { id, ...project };
 }
 
-// Task queries
-export async function getTasks(status?: 'todo' | 'done'): Promise<Task[]> {
+export async function deleteProject(id: string): Promise<boolean> {
   await ensureInit();
-  const result = status
-    ? await client.execute({
-        sql: 'SELECT * FROM tasks WHERE status = ? ORDER BY createdAt DESC',
-        args: [status],
-      })
-    : await client.execute('SELECT * FROM tasks ORDER BY createdAt DESC');
+  // First delete all tasks in this project
+  await client.execute({
+    sql: 'DELETE FROM tasks WHERE projectId = ?',
+    args: [id],
+  });
+  const result = await client.execute({
+    sql: 'DELETE FROM projects WHERE id = ?',
+    args: [id],
+  });
+  return (result.rowsAffected ?? 0) > 0;
+}
 
-  return result.rows as unknown as Task[];
+// Task queries
+export async function getTasks(status?: 'todo' | 'done', projectId?: string, userId?: string): Promise<Task[]> {
+  await ensureInit();
+  
+  let sql = 'SELECT * FROM tasks WHERE 1=1';
+  const args: (string | null)[] = [];
+  
+  if (status) {
+    sql += ' AND status = ?';
+    args.push(status);
+  }
+  if (projectId) {
+    sql += ' AND projectId = ?';
+    args.push(projectId);
+  }
+  if (userId) {
+    sql += ' AND userId = ?';
+    args.push(userId);
+  }
+  
+  sql += ' ORDER BY createdAt DESC';
+  
+  const { rows } = await client.execute({ sql, args });
+  return rows as unknown as Task[];
 }
 
 export async function getTask(id: string): Promise<Task | undefined> {
@@ -111,16 +150,19 @@ export async function getTask(id: string): Promise<Task | undefined> {
   return (rows[0] as unknown as Task) || undefined;
 }
 
-export async function createTask(task: Omit<Task, 'id' | 'createdAt' | 'closedAt' | 'status'>): Promise<Task> {
+export async function createTask(
+  task: Omit<Task, 'id' | 'createdAt' | 'closedAt' | 'status'>,
+  userId?: string
+): Promise<Task> {
   await ensureInit();
   const id = randomUUID();
   const createdAt = new Date().toISOString();
   await client.execute({
     sql: `
-      INSERT INTO tasks (id, title, description, assigneeId, projectId, deadline, status, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, 'todo', ?)
+      INSERT INTO tasks (id, title, description, assigneeId, projectId, deadline, status, createdAt, userId)
+      VALUES (?, ?, ?, ?, ?, ?, 'todo', ?, ?)
     `,
-    args: [id, task.title, task.description || '', task.assigneeId, task.projectId, task.deadline || null, createdAt],
+    args: [id, task.title, task.description || '', task.assigneeId, task.projectId, task.deadline || null, createdAt, userId || null],
   });
   return { id, ...task, description: task.description || '', status: 'todo', createdAt, closedAt: null };
 }
