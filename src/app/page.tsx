@@ -1,50 +1,34 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { AnimatePresence, motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
-import { Task, Project, USERS } from '@/lib/types';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { Project } from '@/lib/types';
 
-// Clear-style gradient based on position
-function getGradient(index: number, total: number): string {
+// Blue gradient for lists (like Clear's My Lists)
+function getBlueGradient(index: number, total: number): string {
   const ratio = total > 1 ? index / (total - 1) : 0;
-  
-  if (ratio < 0.33) {
-    // Red to Orange
-    return `linear-gradient(135deg, hsl(${0 + ratio * 30}, 85%, 55%), hsl(${10 + ratio * 30}, 85%, 50%))`;
-  } else if (ratio < 0.66) {
-    // Orange to Yellow
-    return `linear-gradient(135deg, hsl(${30 + (ratio - 0.33) * 60}, 85%, 55%), hsl(${40 + (ratio - 0.33) * 60}, 85%, 50%))`;
-  } else {
-    // Yellow to Green
-    return `linear-gradient(135deg, hsl(${60 + (ratio - 0.66) * 80}, 70%, 50%), hsl(${80 + (ratio - 0.66) * 80}, 70%, 45%))`;
-  }
+  const hue = 210; // Blue
+  const lightness = 45 + ratio * 15; // Darker at top, lighter at bottom
+  return `hsl(${hue}, 85%, ${lightness}%)`;
 }
 
-interface ClearTaskProps {
-  task: Task;
+interface ListItemProps {
+  project: Project;
   index: number;
   total: number;
-  project?: Project;
-  onComplete: (id: string) => void;
-  onDelete: (id: string) => void;
+  taskCount: number;
   onTap: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-function ClearTask({ task, index, total, project, onComplete, onDelete, onTap }: ClearTaskProps) {
-  const x = useMotionValue(0);
-  const background = useTransform(
-    x,
-    [-150, 0, 150],
-    ['#ef4444', getGradient(index, total), '#22c55e']
-  );
-  const assignee = USERS.find(u => u.id === task.assigneeId);
+function ListItem({ project, index, total, taskCount, onTap, onDelete }: ListItemProps) {
+  const [dragX, setDragX] = useState(0);
 
   const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x > 100) {
-      onComplete(task.id);
-    } else if (info.offset.x < -100) {
-      onDelete(task.id);
+    if (info.offset.x < -100) {
+      onDelete(project.id);
     }
+    setDragX(0);
   };
 
   return (
@@ -52,131 +36,72 @@ function ClearTask({ task, index, total, project, onComplete, onDelete, onTap }:
       layout
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0, transition: { duration: 0.2 } }}
+      exit={{ opacity: 0, height: 0 }}
       className="relative overflow-hidden"
     >
-      {/* Background indicators */}
-      <div className="absolute inset-0 flex">
-        <div className="flex-1 bg-green-500 flex items-center pl-4">
-          <span className="text-white text-xl">✓</span>
-        </div>
-        <div className="flex-1 bg-red-500 flex items-center justify-end pr-4">
-          <span className="text-white text-xl">✕</span>
-        </div>
+      {/* Delete background */}
+      <div className="absolute inset-0 bg-red-500 flex items-center justify-end pr-6">
+        <span className="text-white text-xl">✕</span>
       </div>
 
-      {/* Task card */}
+      {/* List item */}
       <motion.div
         drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.7}
+        dragConstraints={{ left: -100, right: 0 }}
+        dragElastic={0.3}
+        onDrag={(_, info) => setDragX(info.offset.x)}
         onDragEnd={handleDragEnd}
-        style={{ x, background: getGradient(index, total) }}
-        onClick={() => onTap(task.id)}
-        className="relative px-4 py-4 cursor-grab active:cursor-grabbing touch-pan-y"
+        animate={{ x: dragX < -100 ? -100 : 0 }}
+        onClick={() => onTap(project.id)}
+        style={{ backgroundColor: getBlueGradient(index, total) }}
+        className="relative px-5 py-5 cursor-pointer active:opacity-90"
       >
-        {/* Project indicator - thin line on left */}
-        {project && (
-          <div 
-            className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${project.gradient}`}
-          />
-        )}
-
         <div className="flex items-center justify-between">
-          <span className="text-white font-medium text-lg flex-1 pr-2">
-            {task.title}
+          <span className="text-white font-semibold text-xl">
+            {project.name}
           </span>
-          
-          {/* Assignee */}
-          <span className="text-white/70 text-sm">
-            {assignee?.emoji}
-          </span>
+          {taskCount > 0 && (
+            <span className="text-white/60 text-lg">
+              {taskCount}
+            </span>
+          )}
         </div>
-
-        {/* Deadline if exists */}
-        {task.deadline && (
-          <div className="text-white/60 text-xs mt-1">
-            📅 {new Date(task.deadline).toLocaleDateString('uk-UA')}
-          </div>
-        )}
       </motion.div>
     </motion.div>
   );
 }
 
-interface NewTaskInputProps {
-  onSubmit: (title: string) => void;
-  onCancel: () => void;
-  autoFocus?: boolean;
-}
-
-function NewTaskInput({ onSubmit, onCancel, autoFocus }: NewTaskInputProps) {
-  const [title, setTitle] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (autoFocus) {
-      inputRef.current?.focus();
-    }
-  }, [autoFocus]);
-
-  const handleSubmit = () => {
-    if (title.trim()) {
-      onSubmit(title.trim());
-      setTitle('');
-    } else {
-      onCancel();
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      className="overflow-hidden"
-    >
-      <div className="bg-gradient-to-r from-red-500 to-orange-500 px-4 py-4">
-        <input
-          ref={inputRef}
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSubmit();
-            if (e.key === 'Escape') onCancel();
-          }}
-          onBlur={handleSubmit}
-          placeholder="Нова задача..."
-          className="w-full bg-transparent text-white placeholder-white/50 text-lg font-medium outline-none"
-        />
-      </div>
-    </motion.div>
-  );
-}
-
 export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [newName, setNewName] = useState('');
   const [pullDistance, setPullDistance] = useState(0);
   const startY = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const threshold = 60;
 
   const fetchData = useCallback(async () => {
-    const [tasksRes, projectsRes] = await Promise.all([
-      fetch('/api/tasks?status=todo'),
+    const [projectsRes, tasksRes] = await Promise.all([
       fetch('/api/projects'),
+      fetch('/api/tasks?status=todo'),
     ]);
-    const [tasksData, projectsData] = await Promise.all([
-      tasksRes.json(),
+    const [projectsData, tasksData] = await Promise.all([
       projectsRes.json(),
+      tasksRes.json(),
     ]);
-    setTasks(tasksData);
+    
+    // Count tasks per project
+    const counts: Record<string, number> = {};
+    tasksData.forEach((task: any) => {
+      counts[task.projectId] = (counts[task.projectId] || 0) + 1;
+    });
+    
     setProjects(projectsData);
+    setTaskCounts(counts);
     setLoading(false);
   }, []);
 
@@ -184,20 +109,28 @@ export default function Home() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    if (isCreating && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isCreating]);
+
   // Pull-to-create
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (containerRef.current?.scrollTop === 0 && !isCreating) {
+    const scrollTop = containerRef.current?.scrollTop || 0;
+    if (scrollTop <= 0 && !isCreating) {
       startY.current = e.touches[0].clientY;
     }
   }, [isCreating]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (isCreating) return;
-    if (containerRef.current?.scrollTop !== 0) return;
-    if (startY.current === 0) return;
+    if (isCreating || startY.current === 0) return;
+    const scrollTop = containerRef.current?.scrollTop || 0;
+    if (scrollTop > 0) return;
 
     const diff = e.touches[0].clientY - startY.current;
     if (diff > 0) {
+      e.preventDefault();
       setPullDistance(Math.min(diff * 0.5, threshold * 1.5));
     }
   }, [isCreating]);
@@ -210,49 +143,37 @@ export default function Home() {
     startY.current = 0;
   }, [pullDistance]);
 
-  const handleComplete = async (id: string) => {
-    setTasks(tasks.filter(t => t.id !== id));
-    await fetch(`/api/tasks/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'done' }),
-    });
-  };
-
-  const handleDelete = async (id: string) => {
-    setTasks(tasks.filter(t => t.id !== id));
-    await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
-  };
-
-  const handleCreateQuick = async (title: string) => {
+  const handleCreateProject = async () => {
+    if (newName.trim()) {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newName.trim(),
+          emoji: '📋',
+          gradient: 'from-blue-400 to-blue-600',
+        }),
+      });
+      const newProject = await res.json();
+      setProjects([newProject, ...projects]);
+    }
+    setNewName('');
     setIsCreating(false);
-    const defaultProject = projects[0];
-    const res = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title,
-        description: '',
-        assigneeId: USERS[0].id, // Default to first user (Pavlo)
-        projectId: defaultProject?.id || '',
-        deadline: null,
-      }),
-    });
-    const newTask = await res.json();
-    setTasks([newTask, ...tasks]);
   };
 
-  const handleTap = (id: string) => {
-    // Could open detail view
-    window.location.href = `/task/${id}`;
+  const handleDeleteProject = async (id: string) => {
+    setProjects(projects.filter(p => p.id !== id));
+    // Note: In production, you'd also delete associated tasks
   };
 
-  const getProject = (id: string) => projects.find(p => p.id === id);
+  const handleTapProject = (id: string) => {
+    window.location.href = `/project/${id}`;
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-red-500 to-orange-500">
-        <div className="text-4xl animate-pulse">🦞</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'hsl(210, 85%, 50%)' }}>
+        <div className="text-4xl animate-pulse text-white">●●●</div>
       </div>
     );
   }
@@ -260,81 +181,74 @@ export default function Home() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-gray-900 overflow-auto"
+      className="min-h-screen overflow-auto"
+      style={{ backgroundColor: 'hsl(210, 85%, 55%)' }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* Pull indicator */}
       <motion.div
-        className="flex items-center justify-center bg-gradient-to-r from-red-500 to-orange-500 overflow-hidden"
+        className="flex items-center justify-center overflow-hidden"
+        style={{ backgroundColor: 'hsl(210, 85%, 40%)' }}
         animate={{ height: isCreating ? 0 : pullDistance }}
       >
-        <motion.span
-          className="text-white/80 text-sm"
-          animate={{ opacity: pullDistance > threshold * 0.5 ? 1 : 0 }}
-        >
-          {pullDistance >= threshold ? '↓ Відпусти' : '↓ Потягни для нової задачі'}
-        </motion.span>
+        <span className="text-white/70 text-sm">
+          {pullDistance >= threshold ? 'Відпусти' : 'Потягни вниз'}
+        </span>
       </motion.div>
 
-      {/* New task input */}
+      {/* New project input */}
       <AnimatePresence>
         {isCreating && (
-          <NewTaskInput
-            onSubmit={handleCreateQuick}
-            onCancel={() => setIsCreating(false)}
-            autoFocus
-          />
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ backgroundColor: 'hsl(210, 85%, 40%)' }}
+            className="px-5 py-5"
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateProject();
+                if (e.key === 'Escape') { setIsCreating(false); setNewName(''); }
+              }}
+              onBlur={handleCreateProject}
+              placeholder="Новий список..."
+              className="w-full bg-transparent text-white placeholder-white/50 text-xl font-semibold outline-none"
+            />
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Header - minimal */}
-      <div className="sticky top-0 z-10 bg-gray-900/95 backdrop-blur px-4 py-3 flex justify-between items-center border-b border-gray-800">
-        <h1 className="text-white font-semibold text-lg">
-          {tasks.length > 0 ? `${tasks.length} задач` : 'Inbox'}
-        </h1>
-        <a href="/history" className="text-gray-400 text-sm hover:text-white">
-          Історія →
-        </a>
+      {/* Header */}
+      <div className="px-5 pt-12 pb-6">
+        <h1 className="text-white font-bold text-4xl">My Lists</h1>
       </div>
 
-      {/* Task list */}
-      <div className="divide-y divide-black/10">
+      {/* Project list */}
+      <div>
         <AnimatePresence mode="popLayout">
-          {tasks.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-20 text-gray-500"
-            >
-              <div className="text-4xl mb-3">🎉</div>
-              <p>Все зроблено!</p>
-              <p className="text-sm mt-2 text-gray-600">Потягни вниз щоб додати задачу</p>
-            </motion.div>
-          ) : (
-            tasks.map((task, index) => (
-              <ClearTask
-                key={task.id}
-                task={task}
-                index={index}
-                total={tasks.length}
-                project={getProject(task.projectId)}
-                onComplete={handleComplete}
-                onDelete={handleDelete}
-                onTap={handleTap}
-              />
-            ))
-          )}
+          {projects.map((project, index) => (
+            <ListItem
+              key={project.id}
+              project={project}
+              index={index}
+              total={projects.length}
+              taskCount={taskCounts[project.id] || 0}
+              onTap={handleTapProject}
+              onDelete={handleDeleteProject}
+            />
+          ))}
         </AnimatePresence>
       </div>
 
-      {/* Hint at bottom */}
-      {tasks.length > 0 && (
-        <div className="text-center py-6 text-gray-600 text-xs">
-          ← свайп видалити • свайп завершити →
-        </div>
-      )}
+      {/* Bottom padding */}
+      <div className="h-20" />
     </div>
   );
 }
