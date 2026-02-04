@@ -13,7 +13,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [assigneeId, setAssigneeId] = useState('');
@@ -86,8 +85,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="text-2xl animate-pulse">🦞</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-4xl animate-pulse">🦞</div>
       </div>
     );
   }
@@ -96,75 +95,71 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <motion.main
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="min-h-screen bg-gray-50 dark:bg-gray-950"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-gray-900"
     >
       {/* Header */}
-      <header className={`bg-gradient-to-r ${project?.gradient || 'from-gray-400 to-gray-500'} p-4 pt-12`}>
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => router.back()} className="text-white text-lg">
+      <div className={`bg-gradient-to-r ${project?.gradient || 'from-gray-600 to-gray-700'} px-4 py-4`}>
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={() => router.back()} 
+            className="text-white/80 hover:text-white"
+          >
             ← Назад
           </button>
           <div className="flex gap-2">
             <button
               onClick={handleComplete}
-              className="px-4 py-2 bg-white/20 rounded-xl text-white"
+              className="text-white/80 hover:text-white text-xl"
             >
-              ✅ Done
+              ✓
             </button>
             <button
               onClick={handleDelete}
-              className="px-4 py-2 bg-red-500/50 rounded-xl text-white"
+              className="text-white/80 hover:text-red-300 text-xl"
             >
-              🗑️
+              ✕
             </button>
           </div>
         </div>
-        <div className="text-white/80 text-sm">
-          {project?.emoji} {project?.name}
-        </div>
-      </header>
+      </div>
 
       {/* Form */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-6">
         {/* Title */}
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Заголовок"
-          className="w-full p-4 rounded-xl bg-white dark:bg-gray-800 dark:text-white text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Назва задачі"
+          className="w-full bg-transparent text-white text-2xl font-semibold outline-none border-b border-gray-800 pb-2 focus:border-gray-600"
         />
 
         {/* Description */}
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Опис задачі..."
-          rows={4}
-          className="w-full p-4 rounded-xl bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          placeholder="Опис..."
+          rows={3}
+          className="w-full bg-transparent text-gray-300 outline-none resize-none border-b border-gray-800 pb-2 focus:border-gray-600"
         />
 
         {/* Assignee */}
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-            👤 Виконавець
-          </label>
+          <label className="text-gray-500 text-sm mb-2 block">Виконавець</label>
           <div className="flex gap-2">
             {USERS.map((user) => (
               <button
                 key={user.id}
-                type="button"
                 onClick={() => setAssigneeId(user.id)}
-                className={`
-                  flex-1 p-3 rounded-xl text-center transition-all
-                  ${assigneeId === user.id 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-white dark:bg-gray-800 dark:text-white'}
-                `}
+                className={`flex-1 py-3 rounded-lg text-center transition-all ${
+                  assigneeId === user.id 
+                    ? 'bg-gray-700 text-white' 
+                    : 'bg-gray-800 text-gray-400'
+                }`}
               >
-                {user.emoji} {user.name}
+                {user.emoji}
               </button>
             ))}
           </div>
@@ -172,23 +167,19 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
         {/* Project */}
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-            📁 Проект
-          </label>
+          <label className="text-gray-500 text-sm mb-2 block">Проект</label>
           <div className="flex flex-wrap gap-2">
             {projects.map((p) => (
               <button
                 key={p.id}
-                type="button"
                 onClick={() => setProjectId(p.id)}
-                className={`
-                  px-4 py-2 rounded-xl transition-all
-                  ${projectId === p.id 
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  projectId === p.id 
                     ? `bg-gradient-to-r ${p.gradient} text-white` 
-                    : 'bg-white dark:bg-gray-800 dark:text-white'}
-                `}
+                    : 'bg-gray-800 text-gray-400'
+                }`}
               >
-                {p.emoji} {p.name}
+                {p.emoji}
               </button>
             ))}
           </div>
@@ -196,32 +187,22 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
         {/* Deadline */}
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-            📅 Дедлайн
-          </label>
+          <label className="text-gray-500 text-sm mb-2 block">Дедлайн</label>
           <input
             type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
-            className="w-full p-4 rounded-xl bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-gray-800 text-white rounded-lg p-3 outline-none focus:ring-1 focus:ring-gray-600"
           />
-        </div>
-
-        {/* Metadata */}
-        <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <p>📆 Створено: {new Date(task.createdAt).toLocaleString('uk-UA')}</p>
-          {task.closedAt && (
-            <p>✅ Закрито: {new Date(task.closedAt).toLocaleString('uk-UA')}</p>
-          )}
         </div>
 
         {/* Save button */}
         <button
           onClick={handleSave}
           disabled={saving || !title.trim()}
-          className="w-full p-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-4 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold disabled:opacity-50"
         >
-          {saving ? 'Зберігаю...' : 'Зберегти 💾'}
+          {saving ? 'Зберігаю...' : 'Зберегти'}
         </button>
       </div>
     </motion.main>
