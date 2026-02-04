@@ -41,17 +41,26 @@ async function init() {
     )
   `);
 
-  const { rows } = await client.execute('SELECT COUNT(*) as count FROM projects');
-  const row = rows[0] as unknown as { count: number } | undefined;
-  const count = row ? Number(row.count) : 0;
-  if (count === 0) {
-    for (const p of DEFAULT_PROJECTS) {
+  // Clean up duplicate projects (keep only one per name)
+  await client.execute(`
+    DELETE FROM projects WHERE id NOT IN (
+      SELECT MIN(id) FROM projects GROUP BY name
+    )
+  `);
+
+  // Seed projects only if they don't exist (by name)
+  for (const p of DEFAULT_PROJECTS) {
+    const { rows } = await client.execute({
+      sql: 'SELECT id FROM projects WHERE name = ? LIMIT 1',
+      args: [p.name],
+    });
+    if (rows.length === 0) {
       await client.execute({
         sql: 'INSERT INTO projects (id, name, emoji, gradient) VALUES (?, ?, ?, ?)',
         args: [randomUUID(), p.name, p.emoji, p.gradient],
       });
+      console.log(`[db] Seeded project: ${p.name}`);
     }
-    console.log('[db] Seeded default projects');
   }
   console.log('[db] Initialized successfully');
 }
