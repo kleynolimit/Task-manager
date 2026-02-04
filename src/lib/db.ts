@@ -14,6 +14,8 @@ const client = createClient({
   authToken: authToken || undefined,
 });
 
+let initPromise: Promise<void> | null = null;
+
 async function init() {
   await client.execute(`
     CREATE TABLE IF NOT EXISTS projects (
@@ -21,8 +23,10 @@ async function init() {
       name TEXT NOT NULL,
       emoji TEXT NOT NULL,
       gradient TEXT NOT NULL
-    );
+    )
+  `);
 
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS tasks (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -34,7 +38,7 @@ async function init() {
       createdAt TEXT NOT NULL,
       closedAt TEXT,
       FOREIGN KEY (projectId) REFERENCES projects(id)
-    );
+    )
   `);
 
   const { rows } = await client.execute('SELECT COUNT(*) as count FROM projects');
@@ -47,21 +51,27 @@ async function init() {
         args: [randomUUID(), p.name, p.emoji, p.gradient],
       });
     }
+    console.log('[db] Seeded default projects');
   }
+  console.log('[db] Initialized successfully');
 }
 
-// Run init once at module load (fire and forget)
-init().catch((err) => {
-  console.error('[db] init error', err);
-});
+async function ensureInit() {
+  if (!initPromise) {
+    initPromise = init();
+  }
+  await initPromise;
+}
 
 // Project queries
 export async function getProjects(): Promise<Project[]> {
+  await ensureInit();
   const { rows } = await client.execute('SELECT * FROM projects');
   return rows as unknown as Project[];
 }
 
 export async function createProject(project: Omit<Project, 'id'>): Promise<Project> {
+  await ensureInit();
   const id = randomUUID();
   await client.execute({
     sql: 'INSERT INTO projects (id, name, emoji, gradient) VALUES (?, ?, ?, ?)',
@@ -72,6 +82,7 @@ export async function createProject(project: Omit<Project, 'id'>): Promise<Proje
 
 // Task queries
 export async function getTasks(status?: 'todo' | 'done'): Promise<Task[]> {
+  await ensureInit();
   const result = status
     ? await client.execute({
         sql: 'SELECT * FROM tasks WHERE status = ? ORDER BY createdAt DESC',
@@ -83,6 +94,7 @@ export async function getTasks(status?: 'todo' | 'done'): Promise<Task[]> {
 }
 
 export async function getTask(id: string): Promise<Task | undefined> {
+  await ensureInit();
   const { rows } = await client.execute({
     sql: 'SELECT * FROM tasks WHERE id = ? LIMIT 1',
     args: [id],
@@ -91,6 +103,7 @@ export async function getTask(id: string): Promise<Task | undefined> {
 }
 
 export async function createTask(task: Omit<Task, 'id' | 'createdAt' | 'closedAt' | 'status'>): Promise<Task> {
+  await ensureInit();
   const id = randomUUID();
   const createdAt = new Date().toISOString();
   await client.execute({
@@ -104,11 +117,12 @@ export async function createTask(task: Omit<Task, 'id' | 'createdAt' | 'closedAt
 }
 
 export async function updateTask(id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>): Promise<Task | undefined> {
+  await ensureInit();
   const task = await getTask(id);
   if (!task) return undefined;
 
   const fields: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | null)[] = [];
 
   if (updates.title !== undefined) { fields.push('title = ?'); values.push(updates.title); }
   if (updates.description !== undefined) { fields.push('description = ?'); values.push(updates.description); }
@@ -133,12 +147,13 @@ export async function updateTask(id: string, updates: Partial<Omit<Task, 'id' | 
   values.push(id);
   await client.execute(
     `UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`,
-    values as any,
+    values,
   );
   return await getTask(id);
 }
 
 export async function deleteTask(id: string): Promise<boolean> {
+  await ensureInit();
   const result = await client.execute({
     sql: 'DELETE FROM tasks WHERE id = ?',
     args: [id],
