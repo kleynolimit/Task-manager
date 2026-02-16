@@ -24,14 +24,9 @@ export default function GroupRow({ group, index, totalGroups }: GroupRowProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
     >
-      <div className="flex items-center gap-4">
-        <span className="text-3xl">{group.emoji}</span>
-        <span className="text-white text-[28px] font-bold leading-tight">{group.title}</span>
-      </div>
+      <span className="text-white text-[28px] font-bold leading-tight">{group.title}</span>
 
-      <div className="flex items-center gap-3">
-        <span className="text-white/60 text-[22px] font-semibold">{group.taskCount}</span>
-      </div>
+      <span className="text-white/60 text-[22px] font-semibold">{group.taskCount}</span>
     </motion.div>
   );
 }
@@ -40,8 +35,8 @@ function getHeatGradient(index: number, total: number): string {
   const ratio = index / Math.max(total - 1, 1);
   const baseHue = 210;
   const baseSat = 85;
-  const baseLightStart = 45;
-  const baseLightEnd = 60;
+  const baseLightStart = 35;
+  const baseLightEnd = 55;
   
   // Gradually lighten from top to bottom
   const lightness = baseLightStart + (ratio * (baseLightEnd - baseLightStart));

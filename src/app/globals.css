@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body {
+  background: #000;
+  -webkit-overflow-scrolling: touch;
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
@@ -17,6 +22,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 input,
@@ -31,12 +38,7 @@ input::placeholder {
   opacity: 0.6;
 }
 
-/* Hide scrollbar but keep functionality */
+/* Hide scrollbar */
 ::-webkit-scrollbar {
   display: none;
-}
-
-* {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }
