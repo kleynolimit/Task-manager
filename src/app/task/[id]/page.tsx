@@ -1,210 +1,183 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
-import { Task, Project, USERS } from '@/lib/types';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Task } from '@/lib/types';
 
-export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function TaskDetailPage() {
+  const params = useParams();
   const router = useRouter();
+  const taskId = params.id as string;
   const [task, setTask] = useState<Task | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [assigneeId, setAssigneeId] = useState('');
-  const [projectId, setProjectId] = useState('');
-  const [deadline, setDeadline] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [editedTask, setEditedTask] = useState<Partial<Task>>({});
 
   useEffect(() => {
-    async function fetchData() {
-      const [taskRes, projectsRes] = await Promise.all([
-        fetch(`/api/tasks/${id}`),
-        fetch('/api/projects'),
-      ]);
-      
-      if (!taskRes.ok) {
-        router.push('/');
-        return;
+    fetchTask();
+  }, [taskId]);
+
+  const fetchTask = async () => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTask(data);
+        setEditedTask(data);
       }
-
-      const [taskData, projectsData] = await Promise.all([
-        taskRes.json(),
-        projectsRes.json(),
-      ]);
-
-      setTask(taskData);
-      setProjects(projectsData);
-      setTitle(taskData.title);
-      setDescription(taskData.description || '');
-      setAssigneeId(taskData.assigneeId);
-      setProjectId(taskData.projectId);
-      setDeadline(taskData.deadline || '');
+    } catch (error) {
+      console.error('Error fetching task:', error);
+    } finally {
       setLoading(false);
     }
-    fetchData();
-  }, [id, router]);
+  };
 
   const handleSave = async () => {
-    setSaving(true);
-    await fetch(`/api/tasks/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title,
-        description,
-        assigneeId,
-        projectId,
-        deadline: deadline || null,
-      }),
-    });
-    setSaving(false);
-    router.push('/');
-  };
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editedTask),
+      });
 
-  const handleComplete = async () => {
-    await fetch(`/api/tasks/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'done' }),
-    });
-    router.push('/');
-  };
-
-  const handleDelete = async () => {
-    if (confirm('Видалити задачу?')) {
-      await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
-      router.push('/');
+      if (response.ok) {
+        const updated = await response.json();
+        setTask(updated);
+        setEditing(false);
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
     }
   };
 
-  const project = projects.find(p => p.id === projectId);
-
-  if (loading) {
+  if (loading || !task) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-4xl animate-pulse">🦞</div>
+      <div className="min-h-screen bg-gradient-to-b from-purple-500 to-purple-700 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
 
-  if (!task) return null;
-
   return (
-    <motion.main
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gray-900"
-    >
+    <div className="min-h-screen bg-gradient-to-b from-purple-500 to-purple-700">
       {/* Header */}
-      <div className={`bg-gradient-to-r ${project?.gradient || 'from-gray-600 to-gray-700'} px-4 py-4`}>
-        <div className="flex items-center justify-between">
-          <button 
-            onClick={() => router.back()} 
-            className="text-white/80 hover:text-white"
+      <div className="bg-purple-600/50 backdrop-blur-sm border-b border-white/10 px-6 py-4 flex items-center gap-4">
+        <button
+          onClick={() => router.back()}
+          className="text-white text-2xl"
+        >
+          ←
+        </button>
+        <h1 className="text-white text-2xl font-bold flex-1">Task Details</h1>
+        {!editing ? (
+          <button
+            onClick={() => setEditing(true)}
+            className="text-white text-lg"
           >
-            ← Назад
+            Edit
           </button>
-          <div className="flex gap-2">
-            <button
-              onClick={handleComplete}
-              className="text-white/80 hover:text-white text-xl"
-            >
-              ✓
-            </button>
-            <button
-              onClick={handleDelete}
-              className="text-white/80 hover:text-red-300 text-xl"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
+        ) : (
+          <button
+            onClick={handleSave}
+            className="text-white text-lg font-bold"
+          >
+            Save
+          </button>
+        )}
       </div>
 
-      {/* Form */}
-      <div className="p-4 space-y-6">
-        {/* Title */}
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Назва задачі"
-          className="w-full bg-transparent text-white text-2xl font-semibold outline-none border-b border-gray-800 pb-2 focus:border-gray-600"
-        />
-
-        {/* Description */}
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Опис..."
-          rows={3}
-          className="w-full bg-transparent text-gray-300 outline-none resize-none border-b border-gray-800 pb-2 focus:border-gray-600"
-        />
-
-        {/* Assignee */}
+      {/* Task details */}
+      <div className="p-6 space-y-6">
+        {/* Name */}
         <div>
-          <label className="text-gray-500 text-sm mb-2 block">Виконавець</label>
-          <div className="flex gap-2">
-            {USERS.map((user) => (
-              <button
-                key={user.id}
-                onClick={() => setAssigneeId(user.id)}
-                className={`flex-1 py-3 rounded-lg text-center transition-all ${
-                  assigneeId === user.id 
-                    ? 'bg-gray-700 text-white' 
-                    : 'bg-gray-800 text-gray-400'
-                }`}
-              >
-                {user.emoji}
-              </button>
-            ))}
-          </div>
+          <label className="text-white/70 text-sm mb-2 block">Name</label>
+          {editing ? (
+            <input
+              type="text"
+              value={editedTask.name || ''}
+              onChange={(e) => setEditedTask({ ...editedTask, name: e.target.value })}
+              className="w-full bg-white/20 text-white px-4 py-3 rounded-lg border-none outline-none"
+            />
+          ) : (
+            <div className="text-white text-xl font-medium">{task.name}</div>
+          )}
+        </div>
+
+        {/* Priority */}
+        <div>
+          <label className="text-white/70 text-sm mb-2 block">Priority</label>
+          {editing ? (
+            <select
+              value={editedTask.priority || ''}
+              onChange={(e) => setEditedTask({ ...editedTask, priority: e.target.value as any })}
+              className="w-full bg-white/20 text-white px-4 py-3 rounded-lg border-none outline-none"
+            >
+              <option value="">None</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          ) : (
+            <div className="text-white text-lg">{task.priority || 'None'}</div>
+          )}
         </div>
 
         {/* Project */}
         <div>
-          <label className="text-gray-500 text-sm mb-2 block">Проект</label>
-          <div className="flex flex-wrap gap-2">
-            {projects.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setProjectId(p.id)}
-                className={`px-4 py-2 rounded-lg transition-all ${
-                  projectId === p.id 
-                    ? `bg-gradient-to-r ${p.gradient} text-white` 
-                    : 'bg-gray-800 text-gray-400'
-                }`}
-              >
-                {p.emoji}
-              </button>
-            ))}
-          </div>
+          <label className="text-white/70 text-sm mb-2 block">Project</label>
+          {editing ? (
+            <input
+              type="text"
+              value={editedTask.project || ''}
+              onChange={(e) => setEditedTask({ ...editedTask, project: e.target.value })}
+              className="w-full bg-white/20 text-white px-4 py-3 rounded-lg border-none outline-none"
+            />
+          ) : (
+            <div className="text-white text-lg">{task.project || 'None'}</div>
+          )}
         </div>
 
         {/* Deadline */}
         <div>
-          <label className="text-gray-500 text-sm mb-2 block">Дедлайн</label>
-          <input
-            type="date"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            className="w-full bg-gray-800 text-white rounded-lg p-3 outline-none focus:ring-1 focus:ring-gray-600"
-          />
+          <label className="text-white/70 text-sm mb-2 block">Deadline</label>
+          {editing ? (
+            <input
+              type="date"
+              value={editedTask.deadline || ''}
+              onChange={(e) => setEditedTask({ ...editedTask, deadline: e.target.value })}
+              className="w-full bg-white/20 text-white px-4 py-3 rounded-lg border-none outline-none"
+            />
+          ) : (
+            <div className="text-white text-lg">{task.deadline || 'None'}</div>
+          )}
         </div>
 
-        {/* Save button */}
-        <button
-          onClick={handleSave}
-          disabled={saving || !title.trim()}
-          className="w-full py-4 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold disabled:opacity-50"
-        >
-          {saving ? 'Зберігаю...' : 'Зберегти'}
-        </button>
+        {/* Status */}
+        <div>
+          <label className="text-white/70 text-sm mb-2 block">Status</label>
+          <div className="text-white text-lg">{task.status || 'None'}</div>
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="text-white/70 text-sm mb-2 block">Description</label>
+          {editing ? (
+            <textarea
+              value={editedTask.description || ''}
+              onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
+              className="w-full bg-white/20 text-white px-4 py-3 rounded-lg border-none outline-none min-h-[100px]"
+            />
+          ) : (
+            <div className="text-white text-lg whitespace-pre-wrap">{task.description || 'None'}</div>
+          )}
+        </div>
+
+        {/* Group */}
+        <div>
+          <label className="text-white/70 text-sm mb-2 block">List</label>
+          <div className="text-white text-lg">{task.groupTitle}</div>
+        </div>
       </div>
-    </motion.main>
+    </div>
   );
 }

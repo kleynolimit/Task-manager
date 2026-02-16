@@ -1,36 +1,153 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Task Manager - Clear-Style Todo App
 
-## Getting Started
+A minimalist Clear-style todo app synced with Monday.com, built with Next.js 16 and deployed on Vercel.
 
-First, run the development server:
+## Features
+
+- 📋 **Clear-style UI** - Beautiful gradient design inspired by Clear app
+- 🔄 **Monday.com Sync** - Uses Monday.com as the backend (no database needed)
+- 👆 **Swipe Gestures** - Swipe right to complete, swipe left to cancel
+- ⬇️ **Pull to Create** - Pull down to create new tasks
+- 🔐 **Google OAuth** - Restricted access to a single email
+- 🤖 **Bot API** - API key access for external integrations
+- 📱 **Mobile-First** - Optimized for iPhone Safari
+
+## Environment Variables
+
+Set these in Vercel (or `.env.local` for local development):
+
+### Required
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Monday.com API
+MONDAY_API_TOKEN=eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjMzMjUzMzQ3NywiYWFpIjoxMSwidWlkIjoxMTY2NDUyNiwiaWFkIjoiMjAyNC0wMy0xM1QxNzozNToyNi4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6NTI1NjEwOCwicmduIjoidXNlMSJ9.5j1ih-MffMLegGeNcXLgopgJ_eIYg0sZb8IGqG-gEuM
+MONDAY_BOARD_ID=7327642652
+
+# Google OAuth (NextAuth)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+NEXTAUTH_URL=https://task-manager-khaki-kappa.vercel.app
+NEXTAUTH_SECRET=your_nextauth_secret_here
+
+# Auth restriction (only this email can access)
+ALLOWED_EMAIL=pavel@landstargpk.com
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Optional
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Bot API access (for external integrations like OpenClaw)
+API_SECRET_KEY=your_secret_key_for_bot_access
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
 
-## Learn More
+- **Next.js 16** - React framework with App Router
+- **TypeScript** - Type safety
+- **Tailwind CSS 4** - Styling
+- **Framer Motion** - Animations and gestures
+- **NextAuth v5** - Google OAuth authentication
+- **Monday.com GraphQL API** - Backend data storage
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/
+│   ├── api/              # API routes (proxy to Monday.com)
+│   │   ├── auth/         # NextAuth routes
+│   │   ├── groups/       # List groups
+│   │   └── tasks/        # CRUD operations on tasks
+│   ├── group/[id]/       # Group view (tasks list)
+│   ├── task/[id]/        # Task detail view
+│   ├── login/            # Login page
+│   └── page.tsx          # Home (groups list)
+├── components/           # React components
+│   ├── GroupRow.tsx      # Group list item
+│   ├── TaskRow.tsx       # Task list item (with swipe)
+│   └── PullToCreate.tsx  # Pull-to-refresh component
+└── lib/
+    ├── auth.ts           # NextAuth configuration
+    ├── monday.ts         # Monday.com API client
+    └── types.ts          # TypeScript types
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Monday.com Board Structure
 
-## Deploy on Vercel
+**Board:** Personal /w Team (ID: 7327642652)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Groups shown in UI:**
+- `topics` → 📋 Pavlo (active tasks)
+- `group_mm0m8a0` → 🔥 Urgent
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Actions:**
+- Swipe right → Move to `new_group_mkmkw2gr` (✅ Done Pavlo)
+- Swipe left → Move to `group_mm0m3wrz` (❌ Canceled)
+
+## Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Create .env.local with environment variables (see above)
+cp .env.example .env.local
+
+# Run development server
+npm run dev
+
+# Open http://localhost:3000
+```
+
+## Building
+
+```bash
+npm run build
+```
+
+## Deployment
+
+This app is deployed on Vercel at:
+**https://task-manager-khaki-kappa.vercel.app**
+
+To deploy updates:
+```bash
+git push origin main
+# Vercel auto-deploys from main branch
+```
+
+Or use Vercel CLI:
+```bash
+vercel --prod
+```
+
+## API Endpoints
+
+All endpoints require authentication (Google OAuth session or `X-API-Key` header).
+
+### Groups
+
+- `GET /api/groups` - List all groups with task counts
+
+### Tasks
+
+- `GET /api/tasks?group=<id>` - List tasks in a group
+- `POST /api/tasks` - Create a new task
+  - Body: `{ name, groupId, priority?, project?, deadline? }`
+- `GET /api/tasks/[id]` - Get task details
+- `PATCH /api/tasks/[id]` - Update task
+  - Body: `{ name?, priority?, project?, deadline?, status?, description?, moveToGroup? }`
+- `DELETE /api/tasks/[id]` - Delete task
+- `POST /api/tasks/[id]/done` - Mark task as done (move to Done group)
+- `POST /api/tasks/[id]/cancel` - Cancel task (move to Canceled group)
+
+## Bot Access Example
+
+```bash
+curl -H "X-API-Key: your_secret_key" \
+  https://task-manager-khaki-kappa.vercel.app/api/groups
+```
+
+## License
+
+Private use only.

@@ -1,30 +1,26 @@
-import { auth } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
-  const isLoginPage = req.nextUrl.pathname === "/login";
-  const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
-  const isApi = req.nextUrl.pathname.startsWith("/api");
+export function middleware(request: NextRequest) {
+  // Check for API key on API routes (for bot access)
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    const apiKey = request.headers.get('x-api-key');
+    const expectedKey = process.env.API_SECRET_KEY;
 
-  // Allow auth API calls
-  if (isApiAuth) {
-    return NextResponse.next();
-  }
+    // Allow access if valid API key is present
+    if (apiKey && expectedKey && apiKey === expectedKey) {
+      return NextResponse.next();
+    }
 
-  // Redirect to login if not authenticated
-  if (!isLoggedIn && !isLoginPage) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  // Redirect to home if already logged in and on login page
-  if (isLoggedIn && isLoginPage) {
-    return NextResponse.redirect(new URL("/", req.url));
+    // For /api/auth routes, allow without API key (NextAuth handles this)
+    if (request.nextUrl.pathname.startsWith('/api/auth/')) {
+      return NextResponse.next();
+    }
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|icon-.*).*)"],
+  matcher: '/api/:path*',
 };

@@ -1,28 +1,28 @@
-import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
+import NextAuth from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+
+const ALLOWED_EMAIL = process.env.ALLOWED_EMAIL || 'pavel@landstargpk.com';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
-    Google({
+    GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
-  pages: {
-    signIn: "/login",
-  },
   callbacks: {
-    async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub;
+    async signIn({ user }) {
+      // Only allow Pablo's email
+      if (user.email === ALLOWED_EMAIL) {
+        return true;
       }
+      return false;
+    },
+    async session({ session }) {
       return session;
     },
-    async jwt({ token, user }) {
-      if (user) {
-        token.sub = user.id;
-      }
-      return token;
-    },
+  },
+  pages: {
+    signIn: '/login',
   },
 });

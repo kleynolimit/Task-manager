@@ -1,38 +1,28 @@
-import type { Metadata, Viewport } from "next";
-import Providers from "@/components/Providers";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { SessionProvider } from '@/components/SessionProvider';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Clear Tasks",
-  description: "Clear-style task manager",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Tasks",
-  },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#3b82f6" },
-    { media: "(prefers-color-scheme: dark)", color: "#1e40af" },
-  ],
+  title: 'Task Manager',
+  description: 'Clear-style todo app synced with Monday.com',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="uk" suppressHydrationWarning>
+    <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
       <body className="antialiased">
-        <Providers>{children}</Providers>
+        <SessionProvider>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );
