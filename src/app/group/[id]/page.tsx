@@ -27,7 +27,6 @@ export default function GroupPage() {
         if (data.length > 0) {
           setGroupTitle(data[0].groupTitle);
         } else {
-          // Fetch group info for title
           const groupsResponse = await fetch('/api/groups');
           if (groupsResponse.ok) {
             const groups = await groupsResponse.json();
@@ -52,7 +51,7 @@ export default function GroupPage() {
       });
 
       if (response.ok) {
-        fetchTasks(); // Refresh list
+        fetchTasks();
       }
     } catch (error) {
       console.error('Error creating task:', error);
@@ -66,7 +65,7 @@ export default function GroupPage() {
       });
 
       if (response.ok) {
-        setTasks(tasks.filter(t => t.id !== taskId));
+        setTasks(tasks.filter((t) => t.id !== taskId));
       }
     } catch (error) {
       console.error('Error marking task as done:', error);
@@ -80,7 +79,7 @@ export default function GroupPage() {
       });
 
       if (response.ok) {
-        setTasks(tasks.filter(t => t.id !== taskId));
+        setTasks(tasks.filter((t) => t.id !== taskId));
       }
     } catch (error) {
       console.error('Error canceling task:', error);
@@ -89,29 +88,24 @@ export default function GroupPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-red-500 to-orange-600 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,92%,50%)_0%,hsl(45,92%,56%)_100%)] flex items-center justify-center">
+        <div className="text-white text-xl font-semibold">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-500 to-orange-600">
-      {/* Header */}
-      <div className="bg-red-600/50 backdrop-blur-sm border-b border-white/10 px-6 py-4 flex items-center gap-4">
-        <button
-          onClick={() => router.push('/')}
-          className="text-white text-2xl"
-        >
-          ←
-        </button>
-        <h1 className="text-white text-2xl font-bold flex-1">{groupTitle}</h1>
-        <span className="text-white/70">{tasks.length}</span>
-      </div>
-
-      {/* Tasks list with pull-to-create */}
+    <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,92%,50%)_0%,hsl(45,92%,56%)_100%)]">
       <PullToCreate onCreateTask={handleCreateTask}>
-        <div className="divide-y divide-white/10">
+        <div className="min-h-screen">
+          <div className="min-h-[104px] px-5 pt-10 pb-6 flex items-center gap-4">
+            <button onClick={() => router.push('/')} className="text-white text-3xl leading-none" aria-label="Back">
+              ←
+            </button>
+            <h1 className="text-white text-3xl md:text-4xl font-semibold flex-1 leading-tight">{groupTitle}</h1>
+            <span className="text-white/80 text-xl font-semibold">{tasks.length}</span>
+          </div>
+
           {tasks.map((task, index) => (
             <TaskRow
               key={task.id}
@@ -122,12 +116,8 @@ export default function GroupPage() {
               onCancel={handleCancel}
             />
           ))}
-          
-          {tasks.length === 0 && (
-            <div className="text-center py-20 text-white/60">
-              No tasks yet. Pull down to create one!
-            </div>
-          )}
+
+          {tasks.length === 0 && <div className="text-center py-20 text-white/70 text-lg">No tasks yet. Pull down to create one!</div>}
         </div>
       </PullToCreate>
     </div>

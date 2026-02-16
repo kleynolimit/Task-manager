@@ -48,7 +48,7 @@ export default function TaskRow({ task, index, totalTasks, onDone, onCancel }: T
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
       style={{ x, backgroundColor: heatGradient }}
-      className="relative h-16 px-4 flex items-center cursor-pointer border-b border-white/10"
+      className="relative min-h-[80px] px-5 py-6 flex items-center cursor-pointer"
       onClick={() => router.push(`/task/${task.id}`)}
       whileTap={{ scale: 0.98 }}
     >
@@ -59,11 +59,11 @@ export default function TaskRow({ task, index, totalTasks, onDone, onCancel }: T
         )}
         
         {/* Task name */}
-        <span className="text-white font-medium flex-1">{task.name}</span>
+        <span className="text-white text-xl md:text-2xl font-semibold flex-1 leading-tight">{task.name}</span>
         
         {/* Deadline */}
         {task.deadline && (
-          <span className="text-white/60 text-sm">{task.deadline}</span>
+          <span className="text-white/70 text-base">{task.deadline}</span>
         )}
       </div>
 
@@ -84,14 +84,9 @@ export default function TaskRow({ task, index, totalTasks, onDone, onCancel }: T
   );
 }
 
-// Helper function to generate heat gradient colors (red-orange gradient like Clear)
+// Helper function to generate vibrant red → orange/yellow colors like Clear
 function getHeatColor(index: number, total: number): string {
   const ratio = index / Math.max(total - 1, 1);
-  
-  // Red to Orange gradient
-  const r = Math.round(220 + (35 * ratio)); // 220 -> 255
-  const g = Math.round(38 + (127 * ratio)); // 38 -> 165
-  const b = Math.round(38 + (0 * ratio)); // 38 -> 38
-  
-  return `rgb(${r}, ${g}, ${b})`;
+  const hue = 0 + ratio * 45; // 0 (red) -> 45 (orange/yellow)
+  return `hsl(${hue}, 92%, 56%)`;
 }
