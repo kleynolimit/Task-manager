@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
-const ALLOWED_EMAIL = process.env.ALLOWED_EMAIL || 'pavel@landstargpk.com';
+const ALLOWED_EMAIL = process.env.ALLOWED_EMAIL || 'pavel@logity.tech';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -12,11 +12,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async signIn({ user }) {
-      // Only allow Pablo's email
-      if (user.email === ALLOWED_EMAIL) {
-        return true;
-      }
-      return false;
+      const allowedEmails = ALLOWED_EMAIL.split(',').map((email) => email.trim());
+      return !!user.email && allowedEmails.includes(user.email);
     },
     async session({ session }) {
       return session;

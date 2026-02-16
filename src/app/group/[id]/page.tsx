@@ -98,7 +98,7 @@ export default function GroupPage() {
     <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,85%,50%)_0%,hsl(45,80%,55%)_100%)]">
       <PullToCreate onCreateTask={handleCreateTask}>
         <div className="min-h-screen">
-          <div className="min-h-[104px] px-5 pt-10 pb-6 flex items-center gap-4">
+          <div className="min-h-[104px] px-5 pt-[calc(2.5rem+env(safe-area-inset-top))] pb-6 flex items-center gap-4">
             <button onClick={() => router.push('/')} className="text-white text-4xl leading-none" aria-label="Back">
               ←
             </button>
