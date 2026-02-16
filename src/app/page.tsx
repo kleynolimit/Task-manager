@@ -40,8 +40,8 @@ export default function Home() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,92%,50%)_0%,hsl(45,92%,56%)_100%)] flex items-center justify-center">
-        <div className="text-white text-xl font-semibold">Loading...</div>
+      <div className="min-h-screen bg-[linear-gradient(180deg,hsl(210,85%,45%)_0%,hsl(210,85%,60%)_100%)] flex items-center justify-center">
+        <div className="text-white text-2xl font-bold">Loading...</div>
       </div>
     );
   }
@@ -51,10 +51,10 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,92%,50%)_0%,hsl(45,92%,56%)_100%)]">
+    <div className="min-h-screen bg-[linear-gradient(180deg,hsl(210,85%,45%)_0%,hsl(210,85%,60%)_100%)]">
       <div className="min-h-screen">
-        <div className="px-5 pt-10 pb-6">
-          <h1 className="text-white text-3xl md:text-4xl font-semibold leading-tight">My Lists</h1>
+        <div className="px-5 pt-12 pb-8">
+          <h1 className="text-white text-[40px] font-extrabold leading-tight">My Lists</h1>
         </div>
 
         {groups.map((group, index) => (

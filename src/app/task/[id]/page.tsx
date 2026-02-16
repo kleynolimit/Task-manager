@@ -52,34 +52,34 @@ export default function TaskDetailPage() {
 
   if (loading || !task) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-500 to-purple-700 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,85%,50%)_0%,hsl(45,80%,55%)_100%)] flex items-center justify-center">
+        <div className="text-white text-xl font-semibold">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-500 to-purple-700">
+    <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,85%,50%)_0%,hsl(45,80%,55%)_100%)]">
       {/* Header */}
-      <div className="bg-purple-600/50 backdrop-blur-sm border-b border-white/10 px-6 py-4 flex items-center gap-4">
+      <div className="px-5 pt-10 pb-6 flex items-center gap-4">
         <button
           onClick={() => router.back()}
-          className="text-white text-2xl"
+          className="text-white text-4xl leading-none"
         >
           ←
         </button>
-        <h1 className="text-white text-2xl font-bold flex-1">Task Details</h1>
+        <h1 className="text-white text-[32px] font-extrabold flex-1 leading-tight">Task</h1>
         {!editing ? (
           <button
             onClick={() => setEditing(true)}
-            className="text-white text-lg"
+            className="text-white text-xl font-bold"
           >
             Edit
           </button>
         ) : (
           <button
             onClick={handleSave}
-            className="text-white text-lg font-bold"
+            className="text-white text-xl font-extrabold"
           >
             Save
           </button>
@@ -87,30 +87,30 @@ export default function TaskDetailPage() {
       </div>
 
       {/* Task details */}
-      <div className="p-6 space-y-6">
+      <div className="px-5 pb-8 space-y-6">
         {/* Name */}
         <div>
-          <label className="text-white/70 text-sm mb-2 block">Name</label>
+          <label className="text-white/60 text-base mb-2 block font-semibold">Name</label>
           {editing ? (
             <input
               type="text"
               value={editedTask.name || ''}
               onChange={(e) => setEditedTask({ ...editedTask, name: e.target.value })}
-              className="w-full bg-white/20 text-white px-4 py-3 rounded-lg border-none outline-none"
+              className="w-full bg-white/10 text-white text-[22px] font-semibold placeholder-white/50 px-4 py-3 rounded-xl border-none outline-none"
             />
           ) : (
-            <div className="text-white text-xl font-medium">{task.name}</div>
+            <div className="text-white text-[24px] font-bold">{task.name}</div>
           )}
         </div>
 
         {/* Priority */}
         <div>
-          <label className="text-white/70 text-sm mb-2 block">Priority</label>
+          <label className="text-white/60 text-base mb-2 block font-semibold">Priority</label>
           {editing ? (
             <select
               value={editedTask.priority || ''}
               onChange={(e) => setEditedTask({ ...editedTask, priority: e.target.value as any })}
-              className="w-full bg-white/20 text-white px-4 py-3 rounded-lg border-none outline-none"
+              className="w-full bg-white/10 text-white text-[20px] font-semibold px-4 py-3 rounded-xl border-none outline-none"
             >
               <option value="">None</option>
               <option value="High">High</option>
@@ -118,64 +118,64 @@ export default function TaskDetailPage() {
               <option value="Low">Low</option>
             </select>
           ) : (
-            <div className="text-white text-lg">{task.priority || 'None'}</div>
+            <div className="text-white text-[20px] font-semibold">{task.priority || 'None'}</div>
           )}
         </div>
 
         {/* Project */}
         <div>
-          <label className="text-white/70 text-sm mb-2 block">Project</label>
+          <label className="text-white/60 text-base mb-2 block font-semibold">Project</label>
           {editing ? (
             <input
               type="text"
               value={editedTask.project || ''}
               onChange={(e) => setEditedTask({ ...editedTask, project: e.target.value })}
-              className="w-full bg-white/20 text-white px-4 py-3 rounded-lg border-none outline-none"
+              className="w-full bg-white/10 text-white text-[20px] font-semibold placeholder-white/50 px-4 py-3 rounded-xl border-none outline-none"
             />
           ) : (
-            <div className="text-white text-lg">{task.project || 'None'}</div>
+            <div className="text-white text-[20px] font-semibold">{task.project || 'None'}</div>
           )}
         </div>
 
         {/* Deadline */}
         <div>
-          <label className="text-white/70 text-sm mb-2 block">Deadline</label>
+          <label className="text-white/60 text-base mb-2 block font-semibold">Deadline</label>
           {editing ? (
             <input
               type="date"
               value={editedTask.deadline || ''}
               onChange={(e) => setEditedTask({ ...editedTask, deadline: e.target.value })}
-              className="w-full bg-white/20 text-white px-4 py-3 rounded-lg border-none outline-none"
+              className="w-full bg-white/10 text-white text-[20px] font-semibold px-4 py-3 rounded-xl border-none outline-none"
             />
           ) : (
-            <div className="text-white text-lg">{task.deadline || 'None'}</div>
+            <div className="text-white text-[20px] font-semibold">{task.deadline || 'None'}</div>
           )}
         </div>
 
         {/* Status */}
         <div>
-          <label className="text-white/70 text-sm mb-2 block">Status</label>
-          <div className="text-white text-lg">{task.status || 'None'}</div>
+          <label className="text-white/60 text-base mb-2 block font-semibold">Status</label>
+          <div className="text-white text-[20px] font-semibold">{task.status || 'None'}</div>
         </div>
 
         {/* Description */}
         <div>
-          <label className="text-white/70 text-sm mb-2 block">Description</label>
+          <label className="text-white/60 text-base mb-2 block font-semibold">Description</label>
           {editing ? (
             <textarea
               value={editedTask.description || ''}
               onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
-              className="w-full bg-white/20 text-white px-4 py-3 rounded-lg border-none outline-none min-h-[100px]"
+              className="w-full bg-white/10 text-white text-[18px] font-medium placeholder-white/50 px-4 py-3 rounded-xl border-none outline-none min-h-[120px]"
             />
           ) : (
-            <div className="text-white text-lg whitespace-pre-wrap">{task.description || 'None'}</div>
+            <div className="text-white text-[18px] font-medium whitespace-pre-wrap">{task.description || 'None'}</div>
           )}
         </div>
 
         {/* Group */}
         <div>
-          <label className="text-white/70 text-sm mb-2 block">List</label>
-          <div className="text-white text-lg">{task.groupTitle}</div>
+          <label className="text-white/60 text-base mb-2 block font-semibold">List</label>
+          <div className="text-white text-[20px] font-semibold">{task.groupTitle}</div>
         </div>
       </div>
     </div>

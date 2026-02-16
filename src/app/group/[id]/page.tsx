@@ -88,22 +88,22 @@ export default function GroupPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,92%,50%)_0%,hsl(45,92%,56%)_100%)] flex items-center justify-center">
-        <div className="text-white text-xl font-semibold">Loading...</div>
+      <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,85%,50%)_0%,hsl(45,80%,55%)_100%)] flex items-center justify-center">
+        <div className="text-white text-2xl font-bold">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,92%,50%)_0%,hsl(45,92%,56%)_100%)]">
+    <div className="min-h-screen bg-[linear-gradient(180deg,hsl(0,85%,50%)_0%,hsl(45,80%,55%)_100%)]">
       <PullToCreate onCreateTask={handleCreateTask}>
         <div className="min-h-screen">
           <div className="min-h-[104px] px-5 pt-10 pb-6 flex items-center gap-4">
-            <button onClick={() => router.push('/')} className="text-white text-3xl leading-none" aria-label="Back">
+            <button onClick={() => router.push('/')} className="text-white text-4xl leading-none" aria-label="Back">
               ←
             </button>
-            <h1 className="text-white text-3xl md:text-4xl font-semibold flex-1 leading-tight">{groupTitle}</h1>
-            <span className="text-white/80 text-xl font-semibold">{tasks.length}</span>
+            <h1 className="text-white text-[36px] font-extrabold flex-1 leading-tight">{groupTitle}</h1>
+            <span className="text-white/60 text-[22px] font-semibold">{tasks.length}</span>
           </div>
 
           {tasks.map((task, index) => (
@@ -117,7 +117,7 @@ export default function GroupPage() {
             />
           ))}
 
-          {tasks.length === 0 && <div className="text-center py-20 text-white/70 text-lg">No tasks yet. Pull down to create one!</div>}
+          {tasks.length === 0 && <div className="text-center py-20 text-white/70 text-xl font-semibold">No tasks yet. Pull down to create one!</div>}
         </div>
       </PullToCreate>
     </div>

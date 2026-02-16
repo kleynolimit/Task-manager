@@ -4,14 +4,14 @@ import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-500 to-purple-600 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[linear-gradient(180deg,hsl(210,85%,45%)_0%,hsl(210,85%,60%)_100%)] flex items-center justify-center p-6">
       <div className="text-center space-y-8">
-        <h1 className="text-white text-5xl font-bold">Task Manager</h1>
-        <p className="text-white/80 text-xl">Clear-style todo app</p>
+        <h1 className="text-white text-[56px] font-extrabold leading-tight">Clear Tasks</h1>
+        <p className="text-white/70 text-2xl font-semibold">Simplicity meets productivity</p>
         
         <button
           onClick={() => signIn('google', { callbackUrl: '/' })}
-          className="bg-white text-gray-800 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition-colors"
+          className="bg-white text-gray-900 px-10 py-5 rounded-2xl text-xl font-bold hover:bg-gray-100 transition-colors shadow-lg"
         >
           Sign in with Google
         </button>
